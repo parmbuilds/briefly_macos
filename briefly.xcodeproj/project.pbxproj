@@ -9,12 +9,6 @@
 /* Begin PBXBuildFile section */
 		4DC0A3362F0368CF0073854B /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3352F0368CF0073854B /* SwiftSoup */; };
 		4DC0A3382F0368D50073854B /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3372F0368D50073854B /* MarkdownUI */; };
-		4DC0A34E2F0378E60073854B /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A34D2F0378E60073854B /* MLX */; };
-		4DC0A3502F0378E60073854B /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A34F2F0378E60073854B /* MLXRandom */; };
-		4DC0A3532F03796D0073854B /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3522F03796D0073854B /* MLXLLM */; };
-		4DC0A3552F03796D0073854B /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3542F03796D0073854B /* MLXLMCommon */; };
-		4DF35A742F037DF100655869 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF35A722F037DF100655869 /* MetalKit.framework */; };
-		4DF35A752F037DFF00655869 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF35A712F037DF100655869 /* Metal.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,14 +59,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4DC0A3532F03796D0073854B /* MLXLLM in Frameworks */,
-				4DF35A742F037DF100655869 /* MetalKit.framework in Frameworks */,
-				4DC0A34E2F0378E60073854B /* MLX in Frameworks */,
 				4DC0A3362F0368CF0073854B /* SwiftSoup in Frameworks */,
 				4DC0A3382F0368D50073854B /* MarkdownUI in Frameworks */,
-				4DC0A3552F03796D0073854B /* MLXLMCommon in Frameworks */,
-				4DF35A752F037DFF00655869 /* Metal.framework in Frameworks */,
-				4DC0A3502F0378E60073854B /* MLXRandom in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -145,10 +133,6 @@
 			packageProductDependencies = (
 				4DC0A3352F0368CF0073854B /* SwiftSoup */,
 				4DC0A3372F0368D50073854B /* MarkdownUI */,
-				4DC0A34D2F0378E60073854B /* MLX */,
-				4DC0A34F2F0378E60073854B /* MLXRandom */,
-				4DC0A3522F03796D0073854B /* MLXLLM */,
-				4DC0A3542F03796D0073854B /* MLXLMCommon */,
 			);
 			productName = briefly;
 			productReference = 4DC0A2472F0219050073854B /* briefly.app */;
@@ -235,8 +219,6 @@
 			packageReferences = (
 				4DC0A3072F0366D40073854B /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				4DC0A3082F0366EA0073854B /* XCRemoteSwiftPackageReference "MarkdownUI" */,
-				4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */,
-				4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4DC0A2482F0219050073854B /* Products */;
@@ -656,22 +638,6 @@
 				minimumVersion = 2.4.1;
 			};
 		};
-		4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.29.1;
-			};
-		};
-		4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.29.2;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -684,26 +650,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4DC0A3082F0366EA0073854B /* XCRemoteSwiftPackageReference "MarkdownUI" */;
 			productName = MarkdownUI;
-		};
-		4DC0A34D2F0378E60073854B /* MLX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLX;
-		};
-		4DC0A34F2F0378E60073854B /* MLXRandom */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */;
-			productName = MLXRandom;
-		};
-		4DC0A3522F03796D0073854B /* MLXLLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLLM;
-		};
-		4DC0A3542F03796D0073854B /* MLXLMCommon */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLMCommon;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -23,6 +23,8 @@ enum AIProviderError: LocalizedError {
     case authenticationFailed
     case modelNotAvailable
     case embeddingsNotSupported
+    case apiError(String)
+    case decodingError(String)
 
     var errorDescription: String? {
         switch self {
@@ -31,6 +33,8 @@ enum AIProviderError: LocalizedError {
         case .authenticationFailed: return "Authentication failed. Check your API key."
         case .modelNotAvailable: return "Selected model is not available"
         case .embeddingsNotSupported: return "This provider does not support embeddings"
+        case .apiError(let message): return "API Error: \(message)"
+        case .decodingError(let message): return "Decoding Error: \(message)"
         }
     }
 }

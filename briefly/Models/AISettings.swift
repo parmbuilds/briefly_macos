@@ -27,6 +27,10 @@ class AISettings: ObservableObject {
         didSet { UserDefaults.standard.set(ollamaModel, forKey: "ai_ollamaModel") }
     }
 
+    @Published var ollamaEmbeddingModel: String {
+        didSet { UserDefaults.standard.set(ollamaEmbeddingModel, forKey: "ai_ollamaEmbeddingModel") }
+    }
+
     // Auto-synthesis
     @Published var autoSynthesize: Bool {
         didSet { UserDefaults.standard.set(autoSynthesize, forKey: "ai_autoSynthesize") }
@@ -43,6 +47,7 @@ class AISettings: ObservableObject {
 
         self.ollamaBaseURL = UserDefaults.standard.string(forKey: "ai_ollamaBaseURL") ?? "http://localhost:11434"
         self.ollamaModel = UserDefaults.standard.string(forKey: "ai_ollamaModel") ?? "llama3.2"
+        self.ollamaEmbeddingModel = UserDefaults.standard.string(forKey: "ai_ollamaEmbeddingModel") ?? "nomic-embed-text"
         self.autoSynthesize = UserDefaults.standard.bool(forKey: "ai_autoSynthesize")
     }
 
@@ -61,6 +66,16 @@ class AISettings: ObservableObject {
 
     func setClaudeKey(_ key: String) {
         KeychainHelper.save(key: "ai_claude_key", value: key)
+    }
+
+    var currentProvider: AIProvider {
+        switch providerType {
+        case .ollama:
+            return OllamaProvider(baseURL: ollamaBaseURL, model: ollamaModel, embeddingModel: ollamaEmbeddingModel)
+        default:
+            // Fallback to Ollama for now as others are stubs or not fully implemented in this turn
+            return OllamaProvider(baseURL: ollamaBaseURL, model: ollamaModel, embeddingModel: ollamaEmbeddingModel)
+        }
     }
 }
 

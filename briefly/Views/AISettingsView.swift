@@ -57,7 +57,10 @@ struct AISettingsView: View {
             TextField("Model", text: $settings.ollamaModel)
                 .textFieldStyle(.roundedBorder)
 
-            Text("Common models: llama3.2, mistral, phi3")
+            TextField("Embedding Model", text: $settings.ollamaEmbeddingModel)
+                .textFieldStyle(.roundedBorder)
+
+            Text("Chat: llama3.2, mistral | Embed: nomic-embed-text")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -86,6 +89,11 @@ struct AISettingsView: View {
 
             Link("Get API Key", destination: URL(string: "https://platform.openai.com/api-keys")!)
                 .font(.caption)
+
+            Button("Test OpenAI Connection") {
+                testProvider(OpenAIProvider(apiKey: openAIKey))
+            }
+            .disabled(openAIKey.isEmpty || isTesting)
         }
     }
 
@@ -101,43 +109,24 @@ struct AISettingsView: View {
 
             Link("Get API Key", destination: URL(string: "https://console.anthropic.com/")!)
                 .font(.caption)
+
+            Button("Test Claude Connection") {
+                testProvider(ClaudeProvider(apiKey: claudeKey))
+            }
+            .disabled(claudeKey.isEmpty || isTesting)
         }
     }
 
     private var appleSettings: some View {
         Section("Apple On-Device ML") {
-            Text("Uses local inference powered by Gemma 3 1B.")
+            Text("Uses local inference")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Unquantized Gemma 3 1B model")
-                    Spacer()
-                    if ModelManager.shared.isDownloading {
-                        ProgressView(value: ModelManager.shared.downloadProgress)
-                            .frame(width: 100)
-                    } else if ModelManager.shared.isModelAvailable {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    }
-                }
-
-                Text("Status: \(ModelManager.shared.modelStatus)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Download / Load Model") {
-                Task {
-                    do {
-                        _ = try await ModelManager.shared.loadModel()
-                    } catch {
-                        ModelManager.shared.modelStatus = "Error: \(error.localizedDescription)"
-                    }
-                }
-            }
-            .disabled(ModelManager.shared.isDownloading)
+            Text("⚠️ Temporarily disabled")
+                .foregroundStyle(.orange)
+            Text("Please use Ollama for local inference.")
+                .font(.caption)
         }
     }
 
@@ -147,16 +136,19 @@ struct AISettingsView: View {
     }
 
     private func testOllamaConnection() {
+        let provider = OllamaProvider(
+            baseURL: settings.ollamaBaseURL,
+            model: settings.ollamaModel
+        )
+        testProvider(provider)
+    }
+
+    private func testProvider(_ provider: AIProvider) {
         isTesting = true
         testResult = ""
 
         Task {
             do {
-                let provider = OllamaProvider(
-                    baseURL: settings.ollamaBaseURL,
-                    model: settings.ollamaModel
-                )
-
                 let response = try await provider.generateCompletion(prompt: "Say 'OK' if you can read this.")
                 testResult = "✓ Success: \(response.prefix(50))..."
             } catch {

@@ -34,6 +34,7 @@ final class Article {
     var originalContent: String
     var url: String
     var publishDate: Date
+    var imageURL: String?
     var source: Source?
     var story: Story?
 
@@ -41,11 +42,12 @@ final class Article {
     var summary: String?
     var embedding: Data? // Encoded [Float] vector
 
-    init(title: String, originalContent: String, url: String, publishDate: Date) {
+    init(title: String, originalContent: String, url: String, publishDate: Date, imageURL: String? = nil) {
         self.title = title
         self.originalContent = originalContent
         self.url = url
         self.publishDate = publishDate
+        self.imageURL = imageURL
     }
 }
 
@@ -54,6 +56,7 @@ final class Story {
     var title: String
     var summary: String
     var clusterDate: Date
+    var imageURL: String?
     @Relationship(deleteRule: .nullify) var articles: [Article] = []
 
     // Smart Brevity components (could be parsed from summary or separate fields)
@@ -61,12 +64,13 @@ final class Story {
     var facts: [String]
     var context: String
 
-    init(title: String, summary: String, clusterDate: Date, hook: String = "", facts: [String] = [], context: String = "") {
+    init(title: String, summary: String, clusterDate: Date, hook: String = "", facts: [String] = [], context: String = "", imageURL: String? = nil) {
         self.title = title
         self.summary = summary
         self.clusterDate = clusterDate
         self.hook = hook
         self.facts = facts
         self.context = context
+        self.imageURL = imageURL
     }
 }

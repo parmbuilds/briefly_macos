@@ -4,13 +4,15 @@ import Foundation
 class OllamaProvider: AIProvider {
     let baseURL: String
     let model: String
+    let embeddingModel: String
 
     var name: String { "Ollama (\(model))" }
     var supportsEmbeddings: Bool { true }
 
-    init(baseURL: String = "http://localhost:11434", model: String = "llama3.2") {
+    init(baseURL: String = "http://localhost:11434", model: String = "llama3.2", embeddingModel: String = "nomic-embed-text") {
         self.baseURL = baseURL
         self.model = model
+        self.embeddingModel = embeddingModel
     }
 
     func generateCompletion(prompt: String) async throws -> String {
@@ -29,9 +31,16 @@ class OllamaProvider: AIProvider {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw AIProviderError.networkError("HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AIProviderError.networkError("Invalid response")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errorMsg = errorJson["error"] as? String {
+                throw AIProviderError.apiError("Ollama Error: \(errorMsg)")
+            }
+            throw AIProviderError.networkError("HTTP \(httpResponse.statusCode) for Completion")
         }
 
         struct OllamaResponse: Codable {
@@ -49,7 +58,7 @@ class OllamaProvider: AIProvider {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
-            "model": model,
+            "model": embeddingModel,
             "prompt": text
         ]
 
@@ -57,9 +66,16 @@ class OllamaProvider: AIProvider {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw AIProviderError.networkError("HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AIProviderError.networkError("Invalid response")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errorMsg = errorJson["error"] as? String {
+                throw AIProviderError.apiError("Ollama Error: \(errorMsg)")
+            }
+            throw AIProviderError.networkError("HTTP \(httpResponse.statusCode) for Embeddings")
         }
 
         struct OllamaEmbeddingResponse: Codable {

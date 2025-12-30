@@ -1,13 +1,5 @@
-//
-//  ContentView.swift
-//  briefly
-//
-//  Created by Parmpreet Singh on 29/12/2025.
-//
-
 import SwiftUI
 import SwiftData
-import MarkdownUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -15,10 +7,10 @@ struct ContentView: View {
     @Query(sort: \Story.clusterDate, order: .reverse) private var stories: [Story]
     @Query(sort: \Article.publishDate, order: .reverse) private var articles: [Article]
 
-    @State private var selectedCategory: Category?
-    @State private var selectedStory: Story?
-    @State private var selectedArticle: Article?
-    @State private var columnVisibility = NavigationSplitViewVisibility.all
+    @State private var selection: NavigationItem? = .dailyBriefs
+    @State private var detailSelection: DetailSelection?
+    @State private var navigationPath = NavigationPath()
+    @State private var columnVisibility = NavigationSplitViewVisibility.doubleColumn
     @StateObject private var readingSettings = ReadingSettings()
     @StateObject private var aiSettings = AISettings()
     @State private var isShowingReadingSettings = false
@@ -26,80 +18,170 @@ struct ContentView: View {
     @State private var isShowingAddSource = false
     @State private var isShowingDiscover = false
 
+    enum NavigationItem: Hashable {
+        case dailyBriefs
+        case allStories
+        case allArticles
+        case category(Category)
+    }
+
+    enum DetailSelection: Hashable {
+        case story(Story)
+        case article(Article)
+    }
+
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // Sidebar: Categories & Sources
-            List(selection: $selectedCategory) {
-                Button(action: { isShowingAddSource = true }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.blue)
-                        Text("Add Source")
-                            .font(.headline)
+        Group {
+            if selection == .dailyBriefs {
+                // 2-column layout: Sidebar + Document
+                NavigationSplitView {
+                    sidebar
+                } detail: {
+                    DailyBriefsDocumentView(stories: stories)
+                        .toolbar {
+                            ToolbarItem {
+                                globalToolbar
+                            }
+                        }
+                }
+            } else {
+                // 3-column layout: Sidebar + List + Detail
+                NavigationSplitView {
+                    sidebar
+                } content: {
+                    navigatorList
+                } detail: {
+                    detailColumn
+                }
+            }
+        }
+        .onChange(of: selection) {
+            navigationPath = NavigationPath()
+            detailSelection = nil
+        }
+        .onChange(of: detailSelection) {
+            navigationPath = NavigationPath()
+        }
+    }
+
+    @ViewBuilder
+    private var sidebar: some View {
+        List(selection: $selection) {
+            NavigationLink(value: NavigationItem.dailyBriefs) {
+                Label("Daily Briefs", systemImage: "newspaper")
+            }
+
+            NavigationLink(value: NavigationItem.allStories) {
+                Label("All Stories", systemImage: "tray.2")
+            }
+
+            NavigationLink(value: NavigationItem.allArticles) {
+                Label("All Articles", systemImage: "list.dash")
+            }
+
+            Button(action: { isShowingAddSource = true }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(.blue)
+                    Text("Add Source")
+                        .font(.headline)
+                }
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+
+            Section("Categories") {
+                ForEach(categories) { category in
+                    NavigationLink(value: NavigationItem.category(category)) {
+                        Label(category.name, systemImage: category.iconName)
                     }
-                    .padding(.vertical, 8)
+                }
+            }
+
+            Section {
+                Button(action: { isShowingDiscover = true }) {
+                    Label("Discover Top Stories", systemImage: "sparkles")
+                        .foregroundStyle(.purple)
                 }
                 .buttonStyle(.plain)
-
-                NavigationLink(value: nil as Category?) {
-                    Label("All Stories", systemImage: "tray.2")
-                }
-
-                Section("Categories") {
-                    Button(action: { isShowingDiscover = true }) {
-                        Label("Discover Top Stories", systemImage: "sparkles")
-                            .foregroundStyle(.purple)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.vertical, 4)
-
-                    ForEach(categories) { category in
-                        NavigationLink(value: category) {
-                            Label(category.name, systemImage: category.iconName)
-                        }
-                    }
-                }
+                .padding(.vertical, 4)
             }
-            .navigationTitle("Briefly")
-            .listStyle(.sidebar)
-        } content: {
-            // Middle Column: Story List
-            List {
-                if !filteredStories.isEmpty {
-                    Section("Daily Briefs") {
-                        ForEach(filteredStories) { story in
-                            NavigationLink(value: story) {
+        }
+        .navigationTitle("Briefly")
+        .listStyle(.sidebar)
+    }
+
+    @ViewBuilder
+    private var navigatorList: some View {
+        List(selection: $detailSelection) {
+            switch selection {
+            case .allStories:
+                if stories.isEmpty {
+                    ContentUnavailableView("No Stories", systemImage: "newspaper", description: Text("Synthesize your feed to see stories."))
+                } else {
+                    ForEach(groupedStories, id: \.0) { bucket, storiesInBucket in
+                        Section(bucket) {
+                            ForEach(storiesInBucket) { story in
                                 StoryRow(story: story)
+                                    .tag(DetailSelection.story(story))
                             }
                         }
                     }
                 }
 
-                if selectedCategory == nil {
-                    // "All Stories" view: Group articles by Category
-                    ForEach(groupedArticlesByCategory, id: \.0?.id) { category, articlesInCategory in
-                        Section(category?.name ?? "Other Sources") {
-                            ForEach(articlesInCategory) { article in
-                                NavigationLink(value: article) {
-                                    ArticleRow(article: article)
-                                }
-                            }
+            case .allArticles:
+                ForEach(groupedArticlesByCategory, id: \.0?.id) { category, articlesInCategory in
+                    Section(category?.name ?? "Other Sources") {
+                        ForEach(articlesInCategory) { article in
+                            ArticleRow(article: article)
+                                .tag(DetailSelection.article(article))
                         }
+                    }
+                }
+
+            case .category(let category):
+                ForEach(groupedArticlesBySource(for: category), id: \.0?.id) { source, articlesInSource in
+                    Section(source?.name ?? "Unknown Source") {
+                        ForEach(articlesInSource) { article in
+                            ArticleRow(article: article)
+                                .tag(DetailSelection.article(article))
+                        }
+                    }
+                }
+
+            default:
+                EmptyView()
+            }
+        }
+        .navigationTitle(navigationTitle)
+    }
+
+    @ViewBuilder
+    private var detailColumn: some View {
+        NavigationStack(path: $navigationPath) {
+            Group {
+                if let detailSelection {
+                    switch detailSelection {
+                    case .story(let story):
+                        StoryDetailView(story: story)
+                    case .article(let article):
+                        ArticleDetailView(article: article, settings: readingSettings)
                     }
                 } else {
-                    // Category view: Group articles by Source
-                    ForEach(groupedArticlesBySource, id: \.0?.id) { source, articlesInSource in
-                        Section(source?.name ?? "Unknown Source") {
-                            ForEach(articlesInSource) { article in
-                                NavigationLink(value: article) {
-                                    ArticleRow(article: article)
-                                }
-                            }
-                        }
+                    VStack(spacing: 16) {
+                        Image(systemName: "newspaper")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.tertiary)
+                        Text("Select a Story or Article")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        Text("Choose something from the list to start reading.")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle(selectedCategory?.name ?? "Daily Brief")
             .navigationDestination(for: Story.self) { story in
                 StoryDetailView(story: story)
             }
@@ -108,320 +190,92 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem {
-                    HStack {
-                        Button(action: { isShowingAISettings = true }) {
-                            Label("AI Settings", systemImage: "brain")
-                        }
-                        .popover(isPresented: $isShowingAISettings) {
-                            AISettingsView(settings: aiSettings)
-                        }
-
-                        Button(action: synthesizeStories) {
-                            Label("Synthesize", systemImage: "sparkles")
-                        }
-                        .help("Generate story syntheses from articles")
-
-                        Button(action: { isShowingReadingSettings = true }) {
-                            Label("Reading Settings", systemImage: "textformat.size")
-                        }
-                        .popover(isPresented: $isShowingReadingSettings) {
-                            ReadingSettingsView(settings: readingSettings)
-                        }
-
-                        Button(action: refreshStories) {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
-                    }
+                    globalToolbar
                 }
             }
-        } detail: {
-            // Detail Column: The Synthesis
-            Text("Select an item to view details")
-                .foregroundStyle(.secondary)
-        }
-        .onAppear {
-            NewsEngine.shared.seedSampleData(context: modelContext)
-        }
-        .sheet(isPresented: $isShowingAddSource, onDismiss: { isShowingAddSource = false }) {
-            AddSourceView()
-        }
-        .sheet(isPresented: $isShowingDiscover, onDismiss: { isShowingDiscover = false }) {
-            DiscoverFeedsView()
         }
     }
 
+    @ViewBuilder
+    private var globalToolbar: some View {
+        HStack {
+            Button(action: { isShowingAISettings = true }) {
+                Label("AI Settings", systemImage: "brain")
+            }
+            .popover(isPresented: $isShowingAISettings) {
+                AISettingsView(settings: aiSettings)
+            }
+
+            Button(action: synthesizeStories) {
+                Label("Synthesize", systemImage: "sparkles")
+            }
+            .help("Generate story syntheses from articles")
+
+            Button(action: { isShowingReadingSettings = true }) {
+                Label("Reading Settings", systemImage: "textformat.size")
+            }
+            .popover(isPresented: $isShowingReadingSettings) {
+                ReadingSettingsView(settings: readingSettings)
+            }
+
+            Button(action: refreshStories) {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }
+        }
+    }
+
+    private var navigationTitle: String {
+        switch selection {
+        case .allStories: return "All Stories"
+        case .allArticles: return "All Articles"
+        case .category(let category): return category.name
+        default: return "Briefly"
+        }
+    }
+
+    // --- Helper Logic (Moved from previous implementation) ---
+
+    private var groupedStories: [(String, [Story])] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        let groups = Dictionary(grouping: stories) { story in
+            let date = calendar.startOfDay(for: story.clusterDate)
+            if date == today { return "Today" }
+            if let yesterday = calendar.date(byAdding: .day, value: -1, to: today), date == yesterday { return "Yesterday" }
+            return "Earlier"
+        }
+
+        return ["Today", "Yesterday", "Earlier"].compactMap { bucket in
+            guard let items = groups[bucket], !items.isEmpty else { return nil }
+            return (bucket, items.sorted { $0.clusterDate > $1.clusterDate })
+        }
+    }
+
+    private var groupedArticlesByCategory: [(Category?, [Article])] {
+        let groups = Dictionary(grouping: articles) { $0.source?.category }
+        return groups.map { ($0.key, $0.value) }
+            .sorted { ($0.0?.name ?? "") < ($1.0?.name ?? "") }
+    }
+
+    private func groupedArticlesBySource(for category: Category) -> [(Source?, [Article])] {
+        let categoryArticles = articles.filter { $0.source?.category == category }
+        let groups = Dictionary(grouping: categoryArticles) { $0.source }
+        return groups.map { ($0.key, $0.value) }
+            .sorted { ($0.0?.name ?? "") < ($1.0?.name ?? "") }
+    }
+
     private func refreshStories() {
-        // This will eventually trigger the Synthesis Engine
-        print("Refreshing stories...")
+        Task {
+            let engine = NewsEngine()
+            try? await engine.fetchAllFeeds(context: modelContext)
+        }
     }
 
     private func synthesizeStories() {
         Task {
-            do {
-                guard let provider = createAIProvider() else {
-                    print("No AI provider configured")
-                    return
-                }
-
-                let stories = try await NewsEngine.shared.synthesizeStories(
-                    context: modelContext,
-                    provider: provider
-                )
-
-                print("Synthesized \(stories.count) stories")
-            } catch {
-                print("Synthesis error: \(error)")
-            }
+            let engine = NewsEngine()
+            try? await engine.synthesizeStories(context: modelContext, provider: aiSettings.currentProvider)
         }
     }
-
-    private func createAIProvider() -> AIProvider? {
-        switch aiSettings.providerType {
-        case .ollama:
-            return OllamaProvider(
-                baseURL: aiSettings.ollamaBaseURL,
-                model: aiSettings.ollamaModel
-            )
-        case .openai:
-            guard let apiKey = aiSettings.getOpenAIKey(), !apiKey.isEmpty else {
-                return nil
-            }
-            // TODO: Implement OpenAIProvider
-            return nil
-        case .claude:
-            guard let apiKey = aiSettings.getClaudeKey(), !apiKey.isEmpty else {
-                return nil
-            }
-            // TODO: Implement ClaudeProvider
-            return nil
-        case .apple:
-            return AppleMLProvider()
-        }
-    }
-
-    private var filteredStories: [Story] {
-        if let selectedCategory = selectedCategory {
-            return stories.filter { story in
-                story.articles.contains { $0.source?.category == selectedCategory }
-            }
-        }
-        return stories
-    }
-
-    private var unsynthesizedArticles: [Article] {
-        articles.filter { $0.story == nil }
-    }
-
-    private var groupedArticlesByCategory: [(Category?, [Article])] {
-        let dictionary = Dictionary(grouping: unsynthesizedArticles) { $0.source?.category }
-        return dictionary.sorted { (a, b) -> Bool in
-            guard let aCat = a.key, let bCat = b.key else { return a.key != nil }
-            return aCat.name < bCat.name
-        }.map { ($0.key, $0.value) }
-    }
-
-    private var groupedArticlesBySource: [(Source?, [Article])] {
-        guard let selectedCategory = selectedCategory else { return [] }
-        let articlesInCategory = unsynthesizedArticles.filter { $0.source?.category == selectedCategory }
-        let dictionary = Dictionary(grouping: articlesInCategory) { $0.source }
-        return dictionary.sorted { (a, b) -> Bool in
-            guard let aSrc = a.key, let bSrc = b.key else { return a.key != nil }
-            return aSrc.name < bSrc.name
-        }.map { ($0.key, $0.value) }
-    }
-}
-
-struct StoryRow: View {
-    let story: Story
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(story.title)
-                .font(.headline)
-                .lineLimit(2)
-            Text(story.clusterDate, style: .date)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct ArticleRow: View {
-    let article: Article
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(article.title)
-                .font(.subheadline.bold())
-                .lineLimit(1)
-            Text(article.source?.name ?? "Unknown Source")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(article.publishDate, style: .time)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct ArticleDetailView: View {
-    let article: Article
-    @ObservedObject var settings: ReadingSettings
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(article.source?.name ?? "Incoming Source")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(article.title)
-                        .font(.largeTitle.bold())
-                }
-
-                Divider()
-
-                Markdown(article.originalContent)
-                    .markdownTheme(dynamicTheme)
-                    .lineSpacing(settings.lineSpacing * 10 - 10) // Approx mapping to standard "line height" feel
-                            .kerning(settings.characterSpacing)
-                    .multilineTextAlignment(settings.getTextAlignment())
-            }
-            .padding(32)
-            .frame(maxWidth: 800)
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    private var dynamicTheme: Theme {
-        Theme.gitHub
-            .text {
-                FontSize(settings.fontSize)
-                ForegroundColor(.primary)
-            }
-            .heading1 { configuration in
-                configuration.label
-                    .markdownTextStyle {
-                        FontSize(settings.fontSize * 2.0)
-                        FontWeight(.bold)
-                    }
-            }
-            .heading2 { configuration in
-                configuration.label
-                    .markdownTextStyle {
-                        FontSize(settings.fontSize * 1.5)
-                        FontWeight(.bold)
-                    }
-            }
-            .heading3 { configuration in
-                configuration.label
-                    .markdownTextStyle {
-                        FontSize(settings.fontSize * 1.17)
-                        FontWeight(.bold)
-                    }
-            }
-            .image { configuration in
-                configuration.label
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 700)
-                    .cornerRadius(8)
-            }
-    }
-}
-
-struct StoryDetailView: View {
-    let story: Story
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                header
-
-                if !story.hook.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("THE HOOK")
-                            .font(.caption.bold())
-                            .foregroundStyle(.blue)
-                        Markdown(story.hook)
-                            .markdownTextStyle {
-                                FontSize(20) // Equivalent to title3
-                                FontWeight(.medium)
-                            }
-                    }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(12)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("THE FACTS")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-
-                    ForEach(story.facts, id: \.self) { fact in
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 6))
-                                .padding(.top, 8)
-                            Markdown(fact)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-
-                if !story.context.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("THE CONTEXT")
-                            .font(.caption.bold())
-                            .foregroundStyle(.secondary)
-                        Markdown(story.context)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Divider()
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("SOURCES")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-
-                    ForEach(story.articles) { article in
-                        Link(destination: URL(string: article.url)!) {
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(article.title)
-                                        .lineLimit(1)
-                                    Text(article.source?.name ?? "Unknown Source")
-                                        .font(.caption)
-                                }
-                                Spacer()
-                                Image(systemName: "arrow.up.right.square")
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            .padding(32)
-            .frame(maxWidth: 800)
-        }
-        .navigationTitle("")
-    }
-
-    var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(story.clusterDate, style: .date)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text(story.title)
-                .font(.system(size: 34, weight: .bold))
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: [Category.self, Source.self, Article.self, Story.self], inMemory: true)
 }

@@ -27,6 +27,7 @@ class SynthesisEngine {
 
         // Generate embeddings for articles that don't have them
         try await generateEmbeddings(for: unsynthesized)
+        try context.save() // Save embeddings to persist progress
 
         // Cluster articles by similarity
         let clusters = try clusterArticles(unsynthesized)
@@ -35,7 +36,9 @@ class SynthesisEngine {
         // Generate story for each cluster
         var stories: [Story] = []
         for cluster in clusters {
-            guard cluster.count >= 2 && cluster.count <= 10 else {
+            // Allow single articles to become stories if they are significant enough
+            // Upper bound keeps prompt size manageable
+            guard !cluster.isEmpty && cluster.count <= 10 else {
                 print("SynthesisEngine: Skipping cluster with \(cluster.count) articles")
                 continue
             }
@@ -132,13 +135,17 @@ class SynthesisEngine {
         // Parse response into Smart Brevity format
         let parsed = parseSmartBrevity(response)
 
+        // Pick a representative image from the articles
+        let imageURL = articles.first(where: { $0.imageURL != nil })?.imageURL
+
         let story = Story(
             title: parsed.title,
             summary: response,
             clusterDate: Date(),
             hook: parsed.hook,
             facts: parsed.facts,
-            context: parsed.context
+            context: parsed.context,
+            imageURL: imageURL
         )
 
         story.articles = articles

@@ -6,12 +6,46 @@ struct ScrapedArticleData: Sendable {
     let content: String
     let url: String
     let publishDate: Date
+    let imageURL: String?
 }
 
 class NewsEngine {
     static let shared = NewsEngine()
 
-    private init() {}
+    init() {}
+
+    func fetchAllFeeds(context: ModelContext) async throws {
+        print("NewsEngine: Fetching all feeds...")
+        let descriptor = FetchDescriptor<Source>()
+        let sources = try context.fetch(descriptor)
+
+        for source in sources {
+            do {
+                let scrapedData = try await fetchArticles(url: source.url, type: source.type, name: source.name)
+                for data in scrapedData {
+                    // Check if article already exists
+                    let url = data.url
+                    let articleDescriptor = FetchDescriptor<Article>(predicate: #Predicate { $0.url == url })
+                    let existing = try context.fetch(articleDescriptor)
+
+                    if existing.isEmpty {
+                        let article = Article(
+                            title: data.title,
+                            originalContent: data.content,
+                            url: data.url,
+                            publishDate: data.publishDate,
+                            imageURL: data.imageURL
+                        )
+                        article.source = source
+                        context.insert(article)
+                    }
+                }
+            } catch {
+                print("NewsEngine: Failed to fetch \(source.name): \(error)")
+            }
+        }
+        try context.save()
+    }
 
     func fetchArticles(url: String, type: String, name: String) async throws -> [ScrapedArticleData] {
         print("NewsEngine: Fetching articles for URL: \(url) (\(type))")
@@ -29,7 +63,8 @@ class NewsEngine {
                     title: name,
                     content: content,
                     url: url,
-                    publishDate: Date()
+                    publishDate: Date(),
+                    imageURL: nil
                 )
             ]
         }
@@ -63,7 +98,8 @@ class NewsEngine {
                         title: item.title,
                         content: content,
                         url: item.link,
-                        publishDate: item.pubDate ?? Date()
+                        publishDate: item.pubDate ?? Date(),
+                        imageURL: item.imageURL
                     )
                 }
             }
@@ -178,7 +214,8 @@ class NewsEngine {
             title: "Welcome to Briefly",
             originalContent: "This is your daily synthesis. Briefly aggregates your favorite sources and condenses them into smart, scannable summaries.",
             url: "https://briefly.app",
-            publishDate: Date()
+            publishDate: Date(),
+            imageURL: "https://images.unsplash.com/photo-1512314889357-e157c22f938d?q=80&w=800&auto=format&fit=crop"
         )
         sampleArticle.source = sources[0]
         context.insert(sampleArticle)
@@ -193,7 +230,8 @@ class NewsEngine {
                 "Smart Brevity logic extracts 'The Hook', 'The Facts', and 'The Context'.",
                 "Procedural Podcasting is coming soon."
             ],
-            context: "Designed for high-output professionals who need to stay ahead of the curve."
+            context: "Designed for high-output professionals who need to stay ahead of the curve.",
+            imageURL: "https://images.unsplash.com/photo-1512314889357-e157c22f938d?q=80&w=800&auto=format&fit=crop"
         )
         welcomeStory.articles = [sampleArticle]
         context.insert(welcomeStory)
