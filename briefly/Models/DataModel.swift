@@ -37,6 +37,10 @@ final class Article {
     var source: Source?
     var story: Story?
 
+    // AI-generated fields
+    var summary: String?
+    var embedding: Data? // Encoded [Float] vector
+
     init(title: String, originalContent: String, url: String, publishDate: Date) {
         self.title = title
         self.originalContent = originalContent

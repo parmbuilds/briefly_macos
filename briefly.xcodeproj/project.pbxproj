@@ -6,6 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4DC0A3362F0368CF0073854B /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3352F0368CF0073854B /* SwiftSoup */; };
+		4DC0A3382F0368D50073854B /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3372F0368D50073854B /* MarkdownUI */; };
+		4DC0A34E2F0378E60073854B /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A34D2F0378E60073854B /* MLX */; };
+		4DC0A3502F0378E60073854B /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A34F2F0378E60073854B /* MLXRandom */; };
+		4DC0A3532F03796D0073854B /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3522F03796D0073854B /* MLXLLM */; };
+		4DC0A3552F03796D0073854B /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 4DC0A3542F03796D0073854B /* MLXLMCommon */; };
+		4DF35A742F037DF100655869 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF35A722F037DF100655869 /* MetalKit.framework */; };
+		4DF35A752F037DFF00655869 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DF35A712F037DF100655869 /* Metal.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4DC0A2572F0219070073854B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +38,8 @@
 		4DC0A2472F0219050073854B /* briefly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = briefly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DC0A2562F0219070073854B /* brieflyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = brieflyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DC0A2602F0219070073854B /* brieflyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = brieflyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DF35A712F037DF100655869 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		4DF35A722F037DF100655869 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +65,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4DC0A3532F03796D0073854B /* MLXLLM in Frameworks */,
+				4DF35A742F037DF100655869 /* MetalKit.framework in Frameworks */,
+				4DC0A34E2F0378E60073854B /* MLX in Frameworks */,
+				4DC0A3362F0368CF0073854B /* SwiftSoup in Frameworks */,
+				4DC0A3382F0368D50073854B /* MarkdownUI in Frameworks */,
+				4DC0A3552F03796D0073854B /* MLXLMCommon in Frameworks */,
+				4DF35A752F037DFF00655869 /* Metal.framework in Frameworks */,
+				4DC0A3502F0378E60073854B /* MLXRandom in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +99,7 @@
 				4DC0A2492F0219050073854B /* briefly */,
 				4DC0A2592F0219070073854B /* brieflyTests */,
 				4DC0A2632F0219070073854B /* brieflyUITests */,
+				4DC0A3342F0368CF0073854B /* Frameworks */,
 				4DC0A2482F0219050073854B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +112,15 @@
 				4DC0A2602F0219070073854B /* brieflyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4DC0A3342F0368CF0073854B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4DF35A712F037DF100655869 /* Metal.framework */,
+				4DF35A722F037DF100655869 /* MetalKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +143,12 @@
 			);
 			name = briefly;
 			packageProductDependencies = (
+				4DC0A3352F0368CF0073854B /* SwiftSoup */,
+				4DC0A3372F0368D50073854B /* MarkdownUI */,
+				4DC0A34D2F0378E60073854B /* MLX */,
+				4DC0A34F2F0378E60073854B /* MLXRandom */,
+				4DC0A3522F03796D0073854B /* MLXLLM */,
+				4DC0A3542F03796D0073854B /* MLXLMCommon */,
 			);
 			productName = briefly;
 			productReference = 4DC0A2472F0219050073854B /* briefly.app */;
@@ -195,6 +232,12 @@
 			);
 			mainGroup = 4DC0A23E2F0219050073854B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4DC0A3072F0366D40073854B /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				4DC0A3082F0366EA0073854B /* XCRemoteSwiftPackageReference "MarkdownUI" */,
+				4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4DC0A2482F0219050073854B /* Products */;
 			projectDirPath = "";
@@ -595,6 +638,74 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4DC0A3072F0366D40073854B /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.11.3;
+			};
+		};
+		4DC0A3082F0366EA0073854B /* XCRemoteSwiftPackageReference "MarkdownUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/MarkdownUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.29.1;
+			};
+		};
+		4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.29.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4DC0A3352F0368CF0073854B /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A3072F0366D40073854B /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+		4DC0A3372F0368D50073854B /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A3082F0366EA0073854B /* XCRemoteSwiftPackageReference "MarkdownUI" */;
+			productName = MarkdownUI;
+		};
+		4DC0A34D2F0378E60073854B /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		4DC0A34F2F0378E60073854B /* MLXRandom */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A34C2F0378B40073854B /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXRandom;
+		};
+		4DC0A3522F03796D0073854B /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		4DC0A3542F03796D0073854B /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DC0A3512F03796D0073854B /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4DC0A23F2F0219050073854B /* Project object */;
 }

@@ -91,6 +91,29 @@ class NewsEngine {
         }
     }
 
+    // MARK: - AI Synthesis
+
+    func synthesizeStories(context: ModelContext, provider: AIProvider) async throws -> [Story] {
+        print("NewsEngine: Starting synthesis...")
+
+        // Fetch all unsynthesized articles
+        let descriptor = FetchDescriptor<Article>(
+            predicate: #Predicate { $0.story == nil }
+        )
+        let articles = try context.fetch(descriptor)
+
+        guard !articles.isEmpty else {
+            print("NewsEngine: No articles to synthesize")
+            return []
+        }
+
+        let engine = SynthesisEngine(provider: provider)
+        let stories = try await engine.synthesizeStories(from: articles, context: context)
+
+        print("NewsEngine: Created \(stories.count) stories")
+        return stories
+    }
+
     @MainActor
     func seedSampleData(context: ModelContext) {
         // Check if data already exists

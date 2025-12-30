@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import MarkdownUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,6 +19,10 @@ struct ContentView: View {
     @State private var selectedStory: Story?
     @State private var selectedArticle: Article?
     @State private var columnVisibility = NavigationSplitViewVisibility.all
+    @StateObject private var readingSettings = ReadingSettings()
+    @StateObject private var aiSettings = AISettings()
+    @State private var isShowingReadingSettings = false
+    @State private var isShowingAISettings = false
     @State private var isShowingAddSource = false
     @State private var isShowingDiscover = false
 
@@ -99,16 +104,36 @@ struct ContentView: View {
                 StoryDetailView(story: story)
             }
             .navigationDestination(for: Article.self) { article in
-                ArticleDetailView(article: article)
+                ArticleDetailView(article: article, settings: readingSettings)
             }
             .toolbar {
                 ToolbarItem {
-                    Button(action: refreshStories) {
-                        Label("Refresh", systemImage: "arrow.clockwise")
+                    HStack {
+                        Button(action: { isShowingAISettings = true }) {
+                            Label("AI Settings", systemImage: "brain")
+                        }
+                        .popover(isPresented: $isShowingAISettings) {
+                            AISettingsView(settings: aiSettings)
+                        }
+
+                        Button(action: synthesizeStories) {
+                            Label("Synthesize", systemImage: "sparkles")
+                        }
+                        .help("Generate story syntheses from articles")
+
+                        Button(action: { isShowingReadingSettings = true }) {
+                            Label("Reading Settings", systemImage: "textformat.size")
+                        }
+                        .popover(isPresented: $isShowingReadingSettings) {
+                            ReadingSettingsView(settings: readingSettings)
+                        }
+
+                        Button(action: refreshStories) {
+                            Label("Refresh", systemImage: "arrow.clockwise")
+                        }
                     }
                 }
             }
-
         } detail: {
             // Detail Column: The Synthesis
             Text("Select an item to view details")
@@ -128,6 +153,50 @@ struct ContentView: View {
     private func refreshStories() {
         // This will eventually trigger the Synthesis Engine
         print("Refreshing stories...")
+    }
+
+    private func synthesizeStories() {
+        Task {
+            do {
+                guard let provider = createAIProvider() else {
+                    print("No AI provider configured")
+                    return
+                }
+
+                let stories = try await NewsEngine.shared.synthesizeStories(
+                    context: modelContext,
+                    provider: provider
+                )
+
+                print("Synthesized \(stories.count) stories")
+            } catch {
+                print("Synthesis error: \(error)")
+            }
+        }
+    }
+
+    private func createAIProvider() -> AIProvider? {
+        switch aiSettings.providerType {
+        case .ollama:
+            return OllamaProvider(
+                baseURL: aiSettings.ollamaBaseURL,
+                model: aiSettings.ollamaModel
+            )
+        case .openai:
+            guard let apiKey = aiSettings.getOpenAIKey(), !apiKey.isEmpty else {
+                return nil
+            }
+            // TODO: Implement OpenAIProvider
+            return nil
+        case .claude:
+            guard let apiKey = aiSettings.getClaudeKey(), !apiKey.isEmpty else {
+                return nil
+            }
+            // TODO: Implement ClaudeProvider
+            return nil
+        case .apple:
+            return AppleMLProvider()
+        }
     }
 
     private var filteredStories: [Story] {
@@ -197,6 +266,7 @@ struct ArticleRow: View {
 
 struct ArticleDetailView: View {
     let article: Article
+    @ObservedObject var settings: ReadingSettings
 
     var body: some View {
         ScrollView {
@@ -211,13 +281,51 @@ struct ArticleDetailView: View {
 
                 Divider()
 
-                Text(article.originalContent)
-                    .font(.body)
-                    .lineSpacing(6)
+                Markdown(article.originalContent)
+                    .markdownTheme(dynamicTheme)
+                    .lineSpacing(settings.lineSpacing * 10 - 10) // Approx mapping to standard "line height" feel
+                            .kerning(settings.characterSpacing)
+                    .multilineTextAlignment(settings.getTextAlignment())
             }
             .padding(32)
-            .frame(maxWidth: 800, alignment: .leading)
+            .frame(maxWidth: 800)
+            .frame(maxWidth: .infinity)
         }
+    }
+
+    private var dynamicTheme: Theme {
+        Theme.gitHub
+            .text {
+                FontSize(settings.fontSize)
+                ForegroundColor(.primary)
+            }
+            .heading1 { configuration in
+                configuration.label
+                    .markdownTextStyle {
+                        FontSize(settings.fontSize * 2.0)
+                        FontWeight(.bold)
+                    }
+            }
+            .heading2 { configuration in
+                configuration.label
+                    .markdownTextStyle {
+                        FontSize(settings.fontSize * 1.5)
+                        FontWeight(.bold)
+                    }
+            }
+            .heading3 { configuration in
+                configuration.label
+                    .markdownTextStyle {
+                        FontSize(settings.fontSize * 1.17)
+                        FontWeight(.bold)
+                    }
+            }
+            .image { configuration in
+                configuration.label
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 700)
+                    .cornerRadius(8)
+            }
     }
 }
 
@@ -234,9 +342,11 @@ struct StoryDetailView: View {
                         Text("THE HOOK")
                             .font(.caption.bold())
                             .foregroundStyle(.blue)
-                        Text(story.hook)
-                            .font(.title3)
-                            .fontWeight(.medium)
+                        Markdown(story.hook)
+                            .markdownTextStyle {
+                                FontSize(20) // Equivalent to title3
+                                FontWeight(.medium)
+                            }
                     }
                     .padding()
                     .background(Color.blue.opacity(0.1))
@@ -253,7 +363,7 @@ struct StoryDetailView: View {
                             Image(systemName: "circle.fill")
                                 .font(.system(size: 6))
                                 .padding(.top, 8)
-                            Text(fact)
+                            Markdown(fact)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -264,7 +374,7 @@ struct StoryDetailView: View {
                         Text("THE CONTEXT")
                             .font(.caption.bold())
                             .foregroundStyle(.secondary)
-                        Text(story.context)
+                        Markdown(story.context)
                             .foregroundStyle(.secondary)
                     }
                 }
