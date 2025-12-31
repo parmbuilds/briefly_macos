@@ -60,6 +60,16 @@ struct ContentView: View {
         .onChange(of: detailSelection) {
             navigationPath = NavigationPath()
         }
+        .onAppear {
+            NewsEngine.shared.seedInitialData(context: modelContext)
+            BackgroundAutomationManager.shared.start(context: modelContext, aiSettings: aiSettings)
+        }
+        .sheet(isPresented: $isShowingDiscover) {
+            DiscoverFeedsView()
+        }
+        .sheet(isPresented: $isShowingAddSource) {
+            AddSourceView()
+        }
     }
 
     @ViewBuilder
@@ -120,8 +130,11 @@ struct ContentView: View {
                     ForEach(groupedStories, id: \.0) { bucket, storiesInBucket in
                         Section(bucket) {
                             ForEach(storiesInBucket) { story in
-                                StoryRow(story: story)
+                                StoryRow(story: story, onDelete: { deleteStory(story) })
                                     .tag(DetailSelection.story(story))
+                            }
+                            .onDelete { offsets in
+                                offsets.map { storiesInBucket[$0] }.forEach(deleteStory)
                             }
                         }
                     }
@@ -131,8 +144,11 @@ struct ContentView: View {
                 ForEach(groupedArticlesByCategory, id: \.0?.id) { category, articlesInCategory in
                     Section(category?.name ?? "Other Sources") {
                         ForEach(articlesInCategory) { article in
-                            ArticleRow(article: article)
+                            ArticleRow(article: article, onDelete: { deleteArticle(article) })
                                 .tag(DetailSelection.article(article))
+                        }
+                        .onDelete { offsets in
+                            offsets.map { articlesInCategory[$0] }.forEach(deleteArticle)
                         }
                     }
                 }
@@ -141,8 +157,11 @@ struct ContentView: View {
                 ForEach(groupedArticlesBySource(for: category), id: \.0?.id) { source, articlesInSource in
                     Section(source?.name ?? "Unknown Source") {
                         ForEach(articlesInSource) { article in
-                            ArticleRow(article: article)
+                            ArticleRow(article: article, onDelete: { deleteArticle(article) })
                                 .tag(DetailSelection.article(article))
+                        }
+                        .onDelete { offsets in
+                            offsets.map { articlesInSource[$0] }.forEach(deleteArticle)
                         }
                     }
                 }
@@ -269,15 +288,29 @@ struct ContentView: View {
 
     private func refreshStories() {
         Task {
-            let engine = NewsEngine()
-            try? await engine.fetchAllFeeds(context: modelContext)
+            try? await NewsEngine.shared.fetchAllFeeds(context: modelContext)
         }
     }
 
     private func synthesizeStories() {
         Task {
-            let engine = NewsEngine()
-            try? await engine.synthesizeStories(context: modelContext, provider: aiSettings.currentProvider)
+            try? await NewsEngine.shared.synthesizeStories(context: modelContext, provider: aiSettings.currentProvider)
         }
+    }
+
+    private func deleteStory(_ story: Story) {
+        if case .story(let selectedStory) = detailSelection, selectedStory.id == story.id {
+            detailSelection = nil
+        }
+        modelContext.delete(story)
+        try? modelContext.save()
+    }
+
+    private func deleteArticle(_ article: Article) {
+        if case .article(let selectedArticle) = detailSelection, selectedArticle.id == article.id {
+            detailSelection = nil
+        }
+        modelContext.delete(article)
+        try? modelContext.save()
     }
 }

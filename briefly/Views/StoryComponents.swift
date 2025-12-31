@@ -199,6 +199,8 @@ struct ArticleDetailView: View {
 
 struct StoryRow: View {
     let story: Story
+    var onDelete: () -> Void = {}
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(story.title)
@@ -210,11 +212,18 @@ struct StoryRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+        .contextMenu {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete Story", systemImage: "trash")
+            }
+        }
     }
 }
 
 struct ArticleRow: View {
     let article: Article
+    var onDelete: () -> Void = {}
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(article.title)
@@ -227,6 +236,11 @@ struct ArticleRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+        .contextMenu {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete Article", systemImage: "trash")
+            }
+        }
     }
 }
 struct SourcesSection: View {
