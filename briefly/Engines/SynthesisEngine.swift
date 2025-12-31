@@ -186,7 +186,7 @@ class SynthesisEngine {
         - Where sources agree or disagree
         - Notable quotes or data points
 
-        CONTEXT: Why this story matters, background the reader needs (2-3 sentences)
+        CONTEXT: Why this story matters, background the reader needs (3-5 sentences)
 
         Format your response EXACTLY like this:
         TITLE: [your title]

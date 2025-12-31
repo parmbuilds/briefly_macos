@@ -36,20 +36,18 @@ struct ContentView: View {
                 // 2-column layout: Sidebar + Document
                 NavigationSplitView {
                     sidebar
+                        .navigationSplitViewColumnWidth(min: 200, ideal: 250)
                 } detail: {
-                    DailyBriefsDocumentView(stories: stories)
-                        .toolbar {
-                            ToolbarItem {
-                                globalToolbar
-                            }
-                        }
+                    DailyBriefsView(globalToolbar: AnyView(globalToolbar), settings: readingSettings)
                 }
             } else {
                 // 3-column layout: Sidebar + List + Detail
                 NavigationSplitView {
                     sidebar
+                        .navigationSplitViewColumnWidth(min: 200, ideal: 250)
                 } content: {
                     navigatorList
+                        .navigationSplitViewColumnWidth(min: 300, ideal: 350)
                 } detail: {
                     detailColumn
                 }
@@ -163,27 +161,31 @@ struct ContentView: View {
                 if let detailSelection {
                     switch detailSelection {
                     case .story(let story):
-                        StoryDetailView(story: story)
+                        StoryDetailView(story: story, settings: readingSettings)
                     case .article(let article):
                         ArticleDetailView(article: article, settings: readingSettings)
                     }
                 } else {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 24) {
                         Image(systemName: "newspaper")
-                            .font(.system(size: 48))
+                            .font(.system(size: 64))
                             .foregroundStyle(.tertiary)
-                        Text("Select a Story or Article")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                        Text("Choose something from the list to start reading.")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
+
+                        VStack(spacing: 8) {
+                            Text("Select a Story or Article")
+                                .font(.custom("Iowan Old Style", size: 24).weight(.bold))
+                                .foregroundStyle(.primary)
+
+                            Text("Choose something from the list to start reading.")
+                                .font(.custom("Iowan Old Style", size: 16))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .navigationDestination(for: Story.self) { story in
-                StoryDetailView(story: story)
+                StoryDetailView(story: story, settings: readingSettings)
             }
             .navigationDestination(for: Article.self) { article in
                 ArticleDetailView(article: article, settings: readingSettings)
@@ -239,7 +241,7 @@ struct ContentView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        let groups = Dictionary(grouping: stories) { story in
+        let groups = Dictionary(grouping: stories.filter(\.isQualityBrief)) { story in
             let date = calendar.startOfDay(for: story.clusterDate)
             if date == today { return "Today" }
             if let yesterday = calendar.date(byAdding: .day, value: -1, to: today), date == yesterday { return "Yesterday" }

@@ -13,20 +13,20 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 32) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title.uppercased())
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundStyle(.secondary)
-                        .tracking(1)
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(.blue)
+                        .tracking(2)
 
                     Text(subtitle)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(.custom("Iowan Old Style", size: 24).weight(.bold))
+                        .foregroundStyle(.primary)
                 }
                 .padding(.horizontal, 8)
 
                 LazyVGrid(columns: columns, spacing: 24) {
-                    ForEach(stories) { story in
+                    ForEach(stories.filter(\.isQualityBrief)) { story in
                         NavigationLink(value: story) {
                             StoryCard(story: story)
                         }
@@ -87,7 +87,7 @@ struct StoryCard: View {
                 }
 
                 Text(story.title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.custom("Iowan Old Style", size: 18).weight(.bold))
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                     .foregroundStyle(.primary)
@@ -96,12 +96,12 @@ struct StoryCard: View {
                 if story.imageURL == nil {
                     // Show more hook text if no image
                     Text(story.hook)
-                        .font(.subheadline)
+                        .font(.custom("Iowan Old Style", size: 14))
                         .foregroundStyle(.secondary)
                         .lineLimit(4)
                 } else {
                     Text(story.hook)
-                        .font(.caption)
+                        .font(.custom("Iowan Old Style", size: 13))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }

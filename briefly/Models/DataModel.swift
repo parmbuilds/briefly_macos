@@ -64,6 +64,13 @@ final class Story {
     var facts: [String]
     var context: String
 
+    var isQualityBrief: Bool {
+        !title.isEmpty &&
+        title.lowercased() != "untitled story" &&
+        !facts.isEmpty &&
+        !articles.isEmpty
+    }
+
     init(title: String, summary: String, clusterDate: Date, hook: String = "", facts: [String] = [], context: String = "", imageURL: String? = nil) {
         self.title = title
         self.summary = summary
